@@ -1,9 +1,9 @@
 # pdf-chatbot Planning Document
 
-> **Summary**: 근로기준법 PDF를 기반으로 사용자 질문에 답변하는 Node.js + OpenAI API 챗봇
+> **Summary**: 근로기준법 PDF를 기반으로 사용자 질문에 답변하는 Node.js + SambaNova API 챗봇
 >
 > **Project**: chatbot
-> **Version**: 0.2.0
+> **Version**: 0.3.0
 > **Author**: kkongchii
 > **Date**: 2026-05-07
 > **Status**: Draft
@@ -15,7 +15,7 @@
 | Perspective | Content |
 |-------------|---------|
 | **Problem** | 근로기준법 문서를 직접 읽기 어려운 사용자가 원하는 정보를 빠르게 찾지 못한다 |
-| **Solution** | 근로기준법 PDF를 서버에서 파싱하고 OpenAI API로 자연어 질의응답하는 챗봇 제공 |
+| **Solution** | 근로기준법 PDF를 서버에서 파싱하고 SambaNova API (Meta-Llama-3.3-70B-Instruct)로 자연어 질의응답하는 챗봇 제공 |
 | **Function/UX Effect** | 채팅 UI에서 질문 입력 → 로딩 스피너 → 근거 있는 답변 수신, 오류 시 친절한 메시지 표시 |
 | **Core Value** | 법률 문서 접근 장벽을 낮춰 누구나 근로기준법 내용을 대화하듯 이해할 수 있게 함 |
 
@@ -29,7 +29,7 @@
 |-----|-------|
 | **WHY** | 근로기준법 PDF를 쉽게 검색·이해할 수 없는 문제 해결 |
 | **WHO** | 근로기준법 내용을 빠르게 확인하고 싶은 일반 사용자 |
-| **RISK** | OpenAI API 응답 지연, PDF 파싱 실패, Vercel 메모리 한도 초과 |
+| **RISK** | SambaNova API 응답 지연, PDF 파싱 실패, Vercel 메모리 한도 초과 |
 | **SUCCESS** | 질문 입력 → 근로기준법 기반 답변 수신 + Vercel 배포 URL에서 동작 확인 |
 | **SCOPE** | 채팅 UI + 답변 생성 + 로딩/에러 UX + Vercel 배포 (대화 히스토리·파일 업로드 제외) |
 
@@ -81,21 +81,21 @@
 
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
-| FR-01 | `POST /api/chat`: `{ message }` 수신 → OpenAI API 호출 → `{ reply }` 응답 반환 | High | Pending |
-| FR-02 | 서버 시작 시 `docs/근로기준법(법률)(제20520호)(20250223).pdf` 파싱 → 텍스트 메모리 보관 | High | Pending |
-| FR-03 | OpenAI API system 메시지에 PDF 텍스트 포함, user 메시지에 사용자 질문 전달 | High | Pending |
-| FR-04 | `public/index.html`: 질문 입력창 + 전송 버튼 + 채팅 메시지 목록 렌더링 | High | Pending |
-| FR-05 | 전송 버튼 클릭/Enter 시 로딩 스피너 표시, 응답 수신 후 스피너 제거 | Medium | Pending |
-| FR-06 | API 실패 / PDF 파싱 실패 시 사용자에게 친절한 한국어 오류 메시지 표시 | Medium | Pending |
-| FR-07 | 정적 파일(`public/`) 서빙 (`express.static`) | Medium | Pending |
-| FR-08 | `vercel.json`으로 Express → serverless function 래핑 + PDF `includeFiles` 설정 | Medium | Pending |
+| FR-01 | `POST /api/chat`: `{ message }` 수신 → SambaNova API 호출 → `{ reply }` 응답 반환 | High | Done ✅ |
+| FR-02 | 서버 시작 시 `docs/근로기준법(법률)(제20520호)(20250223).pdf` 파싱 → 텍스트 메모리 보관 | High | Done ✅ |
+| FR-03 | SambaNova API system 메시지에 관련 조문 포함 (키워드 기반 추출), user 메시지에 사용자 질문 전달 | High | Done ✅ |
+| FR-04 | `public/index.html`: 7섹션 랜딩 페이지 + 챗봇 UI (입력창 + 전송 버튼 + 메시지 목록) | High | Done ✅ |
+| FR-05 | 전송 버튼 클릭/Enter 시 로딩 스피너 표시, 응답 수신 후 스피너 제거 | Medium | Done ✅ |
+| FR-06 | API 실패 / PDF 파싱 실패 시 사용자에게 친절한 한국어 오류 메시지 표시 | Medium | Done ✅ |
+| FR-07 | 정적 파일(`public/`) 서빙 (`express.static`) | Medium | Done ✅ |
+| FR-08 | `vercel.json`으로 Express → serverless function 래핑 + PDF `includeFiles` 설정 | Medium | Done ✅ |
 
 ### 3.2 Non-Functional Requirements
 
 | Category | Criteria | Measurement Method |
 |----------|----------|-------------------|
 | Performance | OpenAI API 응답 포함 전체 응답 < 15초 | 브라우저 Network 탭 |
-| Security | `OPENAI_API_KEY` 서버사이드만 참조, 프론트엔드 코드에 노출 금지 | 코드 리뷰, 빌드 결과물 확인 |
+| Security | `SAMBANOVA_API_KEY` 서버사이드만 참조, 프론트엔드 코드에 노출 금지 | 코드 리뷰, 빌드 결과물 확인 |
 | Reliability | PDF 파싱 실패 시 서버 크래시 없이 JSON 에러 응답 반환 | 수동 테스트 |
 | UX | 로딩 중 입력 비활성화, 응답 후 재활성화 | 브라우저 수동 테스트 |
 
@@ -105,18 +105,18 @@
 
 ### 4.1 Definition of Done
 
-- [ ] `node server.js` 실행 시 포트 3000에서 정상 동작
-- [ ] 브라우저에서 질문 입력 → 로딩 스피너 → 근로기준법 기반 답변 수신
-- [ ] API 실패 시 "답변을 가져오는 데 실패했습니다." 등 한국어 오류 표시
-- [ ] `vercel dev` 로컬 테스트 통과
-- [ ] Vercel 배포 후 공개 URL에서 정상 동작 확인
+- [x] `node server.js` 실행 시 포트 3000에서 정상 동작
+- [x] 브라우저에서 질문 입력 → 로딩 스피너 → 근로기준법 기반 답변 수신
+- [x] API 실패 시 "답변을 가져오는 데 실패했습니다." 등 한국어 오류 표시
+- [ ] `vercel dev` 로컬 테스트 통과 (미확인)
+- [x] Vercel 배포 후 공개 URL에서 정상 동작 확인 — https://chatbot-six-kohl-41.vercel.app
 
 ### 4.2 Quality Criteria
 
-- [ ] `.env` 파일 Git 커밋 안 됨 (`.gitignore` 확인)
-- [ ] `OPENAI_API_KEY` 프론트엔드 코드(`public/`)에 없음
-- [ ] PDF 파싱 서버사이드(`server.js`)에서만 처리됨
-- [ ] 로딩 중 사용자가 중복 전송 불가 (버튼/입력 비활성화)
+- [x] `.env` 파일 Git 커밋 안 됨 (`.gitignore` 확인)
+- [x] `SAMBANOVA_API_KEY` 프론트엔드 코드(`public/`)에 없음
+- [x] PDF 파싱 서버사이드(`server.js`)에서만 처리됨
+- [x] 로딩 중 사용자가 중복 전송 불가 (버튼/입력 비활성화)
 
 ---
 
@@ -124,11 +124,11 @@
 
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
-| PDF 파일이 크거나 `pdf-parse` 라이브러리 이슈 | High | Medium | 파싱 실패 시 try/catch → 에러 로그 + fallback 메시지 |
-| OpenAI API 응답 지연 (>15초) | Medium | Low | 로딩 스피너 UI, 타임아웃 설정 고려 |
-| Vercel serverless 함수 메모리 한도 (PDF 전체 로드) | Medium | Medium | PDF 텍스트 최대 길이 제한 (예: 앞 50,000자), 초과분 트리밍 |
-| `OPENAI_API_KEY` 미설정 시 배포 실패 | High | Low | Vercel 대시보드 환경변수 설정 안내 포함 |
-| PDF 파일명 특수문자로 인한 경로 문제 | Low | Low | `path.join(__dirname, 'docs', ...)` 사용으로 회피 |
+| PDF 파일이 크거나 `pdf-parse` 라이브러리 이슈 | High | Medium | 파싱 실패 시 try/catch → 에러 로그 + fallback 메시지 ✅ 적용됨 |
+| SambaNova API 응답 지연 (>15초) | Medium | Low | 로딩 스피너 UI ✅ 적용됨 |
+| Vercel serverless 함수 메모리 한도 (PDF 전체 로드) | Medium | Medium | PDF 텍스트 앞 50,000자 트리밍 ✅ 적용됨 |
+| `SAMBANOVA_API_KEY` 미설정 시 배포 실패 | High | Low | Vercel 대시보드 환경변수 설정 완료 ✅ |
+| PDF 파일명 특수문자로 인한 경로 문제 | Low | Low | `path.join(__dirname, 'docs', ...)` 사용 ✅ 적용됨 |
 
 ---
 
@@ -217,8 +217,9 @@ chatbot/
 
 | Variable | Purpose | Scope | Status |
 |----------|---------|-------|--------|
-| `OPENAI_API_KEY` | OpenAI API 인증 | Server only | ☐ .env에 추가 필요 |
-| `PORT` | 서버 포트 (기본 3000) | Server only | ☑ 이미 .env에 있음 |
+| `SAMBANOVA_API_KEY` | SambaNova API 인증 | Server only | ☑ .env + Vercel 설정 완료 |
+| `HF_MODEL` | 사용 모델명 (기본: Meta-Llama-3.3-70B-Instruct) | Server only | ☑ .env + Vercel 설정 완료 |
+| `PORT` | 서버 포트 (기본 3000) | Server only | ☑ .env에 있음 |
 
 ---
 
@@ -238,3 +239,4 @@ chatbot/
 | 0.1 | 2026-05-07 | Initial draft | kkongchii |
 | 0.2 | 2026-05-07 | 사용자 확인 후 재작성: 로딩/에러 UX 추가, 대화 히스토리 제외 명시, PDF 컨텍스트 트리밍 전략 추가 | kkongchii |
 | 0.3 | 2026-05-07 | API 변경: Claude API → OpenAI API (gpt-4o-mini), ANTHROPIC_API_KEY → OPENAI_API_KEY | kkongchii |
+| 0.3.0 | 2026-05-07 | PDCA Check 반영: OpenAI → SambaNova (Meta-Llama-3.3-70B-Instruct), FR 상태 업데이트, Success Criteria 체크 | kkongchii |
