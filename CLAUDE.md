@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트 개요
 
-PDF 문서를 읽어 사용자 질문에 답변하는 챗봇 서비스. Node.js + Express 서버가 PDF를 파싱하고 Claude API로 답변을 생성하며, Vercel에 배포한다.
+PDF 문서를 읽어 사용자 질문에 답변하는 챗봇 서비스. Node.js + Express 서버가 PDF를 파싱하고 OpenAI API로 답변을 생성하며, Vercel에 배포한다.
 
 ## 개발 명령어
 
@@ -23,19 +23,19 @@ vercel dev
 
 ```
 chatbot/
-├── server.js      # Express 진입점 — PDF 파싱 + Claude API 호출
+├── server.js      # Express 진입점 — PDF 파싱 + OpenAI API 호출
 ├── public/        # 프론트엔드 (HTML/CSS/JS) — 정적 파일 서빙
 ├── docs/          # PDF 문서 보관 (서버에서만 읽음)
 └── vercel.json    # Express → serverless function 래핑 설정
 ```
 
-**데이터 흐름:** 브라우저 → `POST /api/chat` → `server.js`에서 `docs/` PDF 파싱 → Claude API (`claude-haiku-4-5-20251001`) 호출 → 응답 반환
+**데이터 흐름:** 브라우저 → `POST /api/chat` → `server.js`에서 `docs/` PDF 파싱 → OpenAI API (`gpt-4o-mini`) 호출 → 응답 반환
 
 ## 핵심 규칙
 
 ### 보안
 - `.env`는 **절대 수정하거나 Git에 커밋하지 말 것**
-- `ANTHROPIC_API_KEY`는 `server.js`에서만 `process.env`로 참조 — 프론트엔드 노출 금지
+- `OPENAI_API_KEY`는 `server.js`에서만 `process.env`로 참조 — 프론트엔드 노출 금지
 - PDF 파싱은 반드시 서버 사이드에서만 처리
 
 ### 코드 스타일
@@ -45,7 +45,7 @@ chatbot/
 ## 환경변수 (`.env`)
 
 ```
-ANTHROPIC_API_KEY=your_api_key_here
+OPENAI_API_KEY=your_api_key_here
 PORT=3000
 ```
 
