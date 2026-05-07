@@ -19,30 +19,75 @@ async function loadPdfText(filePath) {
   return data.text.slice(0, 50000);
 }
 
-// 질문과 관련된 PDF 구절을 추출 (앞뒤 500자씩 최대 3구간)
+// 질문 키워드를 정규화하여 확장 (띄어쓰기 분리 + 동의어)
+function expandKeywords(query) {
+  const cleaned = query.replace(/[?？!！。.,]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // 붙여쓴 복합어를 분리 (예: 연차유급휴가 → 연차, 유급휴가)
+  const splits = {
+    '연차유급휴가': ['연차', '유급휴가', '연차휴가'],
+    '연차휴가': ['연차', '유급휴가'],
+    '퇴직금': ['퇴직금', '퇴직'],
+    '부당해고': ['부당해고', '해고'],
+    '육아휴직': ['육아휴직', '육아'],
+    '출산휴가': ['출산휴가', '출산'],
+    '야간수당': ['야간수당', '야간', '가산임금'],
+    '연장근로': ['연장근로', '초과근무', '연장'],
+    '최저임금': ['최저임금', '최저'],
+    '수습기간': ['수습기간', '수습'],
+    '근로계약': ['근로계약', '계약서'],
+    '해고예고': ['해고예고', '해고', '예고'],
+  };
+
+  const keywords = new Set();
+  // 원본 토큰 추가
+  cleaned.split(/\s+/).filter(w => w.length >= 2).forEach(w => keywords.add(w));
+  // 복합어 분리 추가
+  for (const [compound, parts] of Object.entries(splits)) {
+    if (cleaned.includes(compound) || cleaned.replace(/\s/g, '').includes(compound)) {
+      parts.forEach(p => keywords.add(p));
+    }
+  }
+  return [...keywords];
+}
+
+// 질문과 관련된 PDF 구절을 추출
 function extractRelevantChunks(text, query) {
-  const keywords = query.replace(/[?？]/g, '').split(/\s+/).filter(w => w.length >= 2);
-  const found = [];
+  const keywords = expandKeywords(query);
+  const positions = [];
+
   for (const kw of keywords) {
     let start = 0;
-    while (true) {
+    while (positions.length < 9) {
       const idx = text.indexOf(kw, start);
       if (idx === -1) break;
-      found.push(idx);
+      positions.push(idx);
       start = idx + 1;
-      if (found.length >= 6) break;
     }
-    if (found.length >= 6) break;
   }
-  if (found.length === 0) return text.slice(0, 8000);
 
-  // 겹치는 구간 병합
-  const chunks = found
-    .sort((a, b) => a - b)
-    .slice(0, 3)
-    .map(idx => text.slice(Math.max(0, idx - 500), Math.min(text.length, idx + 1000)));
+  // 매칭 없으면 PDF 전체 반환 (47,200자로 이미 컨텍스트 내 수용 가능)
+  if (positions.length === 0) return text;
 
-  return chunks.join('\n\n...(중략)...\n\n');
+  // 위치 정렬 후 근접한 구간 병합 (500자 이내면 하나로 합침)
+  const sorted = [...new Set(positions)].sort((a, b) => a - b);
+  const merged = [];
+  let rangeStart = Math.max(0, sorted[0] - 500);
+  let rangeEnd = Math.min(text.length, sorted[0] + 1000);
+
+  for (let i = 1; i < sorted.length && merged.length < 4; i++) {
+    const s = Math.max(0, sorted[i] - 500);
+    if (s <= rangeEnd) {
+      rangeEnd = Math.min(text.length, sorted[i] + 1000);
+    } else {
+      merged.push(text.slice(rangeStart, rangeEnd));
+      rangeStart = s;
+      rangeEnd = Math.min(text.length, sorted[i] + 1000);
+    }
+  }
+  merged.push(text.slice(rangeStart, rangeEnd));
+
+  return merged.join('\n\n...(중략)...\n\n');
 }
 
 // SambaNova API에 질문을 전달하고 답변을 반환
