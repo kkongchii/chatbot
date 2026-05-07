@@ -45,12 +45,9 @@ function extractRelevantChunks(text, query) {
   return chunks.join('\n\n...(중략)...\n\n');
 }
 
-// SambaNova API에 질문을 전달하고 답변을 반환
+// OpenAI API에 질문을 전달하고 답변을 반환
 async function askOpenAI(userMessage) {
-  const client = new OpenAI({
-    apiKey: process.env.SAMBANOVA_API_KEY,
-    baseURL: 'https://api.sambanova.ai/v1',
-  });
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const context = pdfText ? extractRelevantChunks(pdfText, userMessage) : '';
 
@@ -68,7 +65,7 @@ ${context}`
 본 서비스는 법적 효력이 없는 참고용 정보임을 필요 시 안내하세요.`;
 
   const response = await client.chat.completions.create({
-    model: process.env.HF_MODEL || 'Meta-Llama-3.3-70B-Instruct',
+    model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage }
@@ -96,7 +93,7 @@ app.post('/api/chat', async (req, res) => {
     const reply = await askOpenAI(message.trim());
     res.json({ reply });
   } catch (err) {
-    console.error('SambaNova API 오류:', err.message);
+    console.error('OpenAI API 오류:', err.message);
     res.status(500).json({ error: '답변을 가져오는 데 실패했습니다.' });
   }
 });
