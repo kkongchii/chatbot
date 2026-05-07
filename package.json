@@ -1,0 +1,16 @@
+{
+  "name": "pdf-chatbot",
+  "version": "1.0.0",
+  "description": "근로기준법 PDF 기반 노무 챗봇",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "openai": "^4.0.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
