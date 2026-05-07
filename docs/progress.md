@@ -2,6 +2,7 @@
 
 > **최종 업데이트**: 2026-05-07
 > **저장소**: https://github.com/kkongchii/chatbot
+> **배포 URL**: https://chatbot-six-kohl-41.vercel.app
 > **현재 브랜치**: main
 
 ---
@@ -9,7 +10,7 @@
 ## 진행 단계
 
 ```
-[Plan ✅] → [Design ✅] → [Do 🔄] → [Check ⏳] → [Deploy ⏳]
+[Plan ✅] → [Design ✅] → [Do ✅] → [Deploy ✅] → [Check 🔄]
 ```
 
 ---
@@ -18,7 +19,7 @@
 
 ### 1. Plan (`docs/01-plan/features/pdf-chatbot.plan.md`)
 - 서비스 목표: 근로기준법 PDF 기반 노무 챗봇
-- API: OpenAI `gpt-4o-mini`
+- API: SambaNova `Meta-Llama-3.3-70B-Instruct`
 - 배포 대상: Vercel (serverless)
 - MVP 범위: 챗봇 UI + 답변 생성 + 로딩/에러 UX (대화 히스토리·파일 업로드 제외)
 
@@ -34,7 +35,7 @@
 |------|------|
 | `loadPdfText()` | PDF 파싱, 앞 50,000자 트리밍 (Vercel 메모리 대응) |
 | `extractRelevantChunks()` | 질문 키워드로 관련 조문 구절 추출 (최대 3구간) |
-| `askOpenAI()` | OpenAI `gpt-4o-mini` 호출, 관련 조문을 system 메시지로 전달 |
+| `askOpenAI()` | SambaNova `Meta-Llama-3.3-70B-Instruct` 호출, 관련 조문을 system 메시지로 전달 |
 | `POST /api/chat` | 빈 메시지 → 400, API 오류 → 500, 성공 → `{ reply }` |
 
 #### public/index.html
@@ -51,12 +52,20 @@
 "dotenv": "^16.0.0"
 ```
 
+### 4. 배포 (Vercel)
+- URL: https://chatbot-six-kohl-41.vercel.app
+- `vercel.json`: serverless 래핑 + `docs/**` includeFiles (PDF 번들 포함)
+- Vercel 환경변수: `SAMBANOVA_API_KEY`, `HF_MODEL` 등록 완료
+- SambaNova API 동작 확인: `Meta-Llama-3.3-70B-Instruct` 모델 응답 정상
+
 ---
 
 ## 커밋 히스토리
 
 | 커밋 | 내용 |
 |------|------|
+| `aa14d5c` | feat: switch to SambaNova API and add vercel.json |
+| `fec7f22` | docs: add progress.md with current work status summary |
 | `5b06322` | feat: implement pdf-chatbot with OpenAI API and landing page UI |
 | `77f96e2` | docs: switch API from Claude to OpenAI and add pdf-chatbot plan |
 | `ac6ff80` | chore: initial project setup |
@@ -67,17 +76,24 @@
 
 | 문제 | 원인 | 상태 |
 |------|------|------|
-| 연차·퇴직금 질문에 엉뚱한 답변 | `extractRelevantChunks()`의 키워드 매칭이 부정확 (띄어쓰기 불일치 등) | **미해결** |
+| 연차·퇴직금 질문에 부정확한 답변 | `extractRelevantChunks()`의 키워드 매칭 부정확 (띄어쓰기 불일치 등) | **미해결** |
 
 ---
 
 ## 남은 작업
 
 - [ ] `extractRelevantChunks()` 개선 — 키워드 정규화 (띄어쓰기 제거, 유사어 확장)
-- [ ] `vercel.json` 작성 — serverless 래핑 + `docs/**` includeFiles
-- [ ] 로컬 테스트 전체 시나리오 통과 (T-01 ~ T-05)
-- [ ] Vercel 환경변수(`OPENAI_API_KEY`) 설정 후 배포
-- [ ] 배포 URL에서 실제 동작 확인
+- [ ] 전체 테스트 시나리오 통과 (T-01 ~ T-05)
+
+---
+
+## 환경변수
+
+| 변수 | 용도 | 설정 위치 |
+|------|------|-----------|
+| `SAMBANOVA_API_KEY` | SambaNova API 인증 | `.env` + Vercel 대시보드 |
+| `HF_MODEL` | 사용 모델명 (기본: `Meta-Llama-3.3-70B-Instruct`) | `.env` + Vercel 대시보드 |
+| `PORT` | 로컬 서버 포트 (기본: 3000) | `.env` |
 
 ---
 
@@ -89,7 +105,7 @@ npm install
 
 # 2. .env 파일 생성
 cp .env.example .env
-# .env에 OPENAI_API_KEY 입력
+# .env에 SAMBANOVA_API_KEY 입력
 
 # 3. 서버 실행
 node server.js
@@ -107,6 +123,7 @@ taskkill /PID <PID번호> /F
 ```
 chatbot/
 ├── server.js                          # Express 서버 (메인 로직)
+├── server.js.bak                      # OpenAI 버전 백업
 ├── public/
 │   └── index.html                     # 랜딩 + 챗봇 UI
 ├── docs/
@@ -114,6 +131,7 @@ chatbot/
 │   ├── 01-plan/features/pdf-chatbot.plan.md
 │   ├── 02-design/features/pdf-chatbot.design.md
 │   └── progress.md                    # 이 문서
+├── vercel.json                        # Vercel 배포 설정
 ├── package.json
 ├── .env                               # Git 제외 (API 키)
 ├── .env.example                       # 환경변수 템플릿
