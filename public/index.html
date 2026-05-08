@@ -498,6 +498,29 @@
       text-align: center;
     }
 
+    /* ── 봇 답변 마크다운 ── */
+    .message-row.bot .message-bubble p { margin-bottom: 8px; }
+    .message-row.bot .message-bubble p:last-child { margin-bottom: 0; }
+    .message-row.bot .message-bubble ul,
+    .message-row.bot .message-bubble ol { padding-left: 20px; margin-bottom: 8px; }
+    .message-row.bot .message-bubble li { margin-bottom: 4px; }
+    .message-row.bot .message-bubble strong { font-weight: 700; color: var(--text-dark); }
+    .message-row.bot .message-bubble code {
+      background: rgba(0,0,0,0.07);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    .message-row.bot .message-bubble h1,
+    .message-row.bot .message-bubble h2,
+    .message-row.bot .message-bubble h3 {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-dark);
+    }
+
     /* ── 애니메이션 ── */
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(10px); }
