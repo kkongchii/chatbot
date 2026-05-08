@@ -778,7 +778,12 @@
 
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
-    bubble.textContent = text;
+
+    if (type === 'bot') {
+      bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    } else {
+      bubble.textContent = text;
+    }
 
     row.appendChild(bubble);
     box.appendChild(row);
